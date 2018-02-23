@@ -1,0 +1,38 @@
+FROM alpine:latest
+
+LABEL maintainer="Saeid Omalzadeh>"
+ENV _USER axa-tech
+ENV _WORK_DIR /home/${_USER} 
+
+RUN set -x \
+        && apk update \
+        && apk upgrade \
+        && apk add --no-cache curl busybox-suid bash
+        
+RUN addgroup $_USER \
+    && adduser -h /home/$_USER -u 1000 -S -G $_USER $_USER
+
+ADD skript.sh $_WORK_DIR/
+ADD cronjob $_WORK_DIR/
+
+RUN chmod 755 $_WORK_DIR/skript.sh
+RUN chmod 644 $_WORK_DIR/cronjob
+RUN chown root:cron /usr/bin/crontab
+RUN chmod g+s /usr/bin/crontab
+RUN touch /var/log/cron.log
+RUN chown $_USER:$_USER /var/log/cron.log
+RUN mkdir -m 0644 -p /etc/cron.d
+#RUN mkdir /var/spool/cron/crontabs/axa-tech/crontab
+
+#RUN chown $_USER:$_USER /var/spool/cron/crontabs/axa-tech
+#RUN chmod 0600 /var/spool/cron/crontabs/axa-tech
+RUN chown $_USER:$_USER /home/$_USER/*
+
+WORKDIR $_WORK_DIR/
+USER axa-tech
+#RUN crontab $_WORK_DIR/cronjob
+#COPY $_WORK_DIR/cronjob /var/spool/cron/crontabs/axa-tech/crontab
+
+#CMD [ "crontab", "$_WORK_DIR/cronjob" ] 
+CMD [ "crond", "-f", "-d", "8" ]
+ 
