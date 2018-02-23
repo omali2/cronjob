@@ -1,0 +1,39 @@
+FROM alpine:latest
+
+LABEL maintainer="Saeid Omalzadeh>"
+ENV _USER axa-tech
+ENV _WORK_DIR /usr/local/bin
+ENV LOG_DIR /var/log
+
+
+RUN apk add --update python py-pip mysql-client bash \
+    && pip install awscli \
+    && rm -rf /var/cache/apk/*
+
+RUN addgroup $_USER \
+    && adduser -h $_WORK_DIR -u 1000 -S -G $_USER $_USER
+
+WORKDIR /usr/local/bin/
+
+ADD skript.sh /usr/local/bin/
+RUN chmod 755 /usr/local/bin/skript.sh
+ADD cronjob /usr/local/bin/
+RUN chmod 644 /usr/local/bin/cronjob 
+RUN touch /var/log/cron.log
+RUN chmod 644 /var/log/cron.log
+#RUN chown -Rf ${_USER}:${_USER} $WORK_DIR/
+
+#RUN chmod 4755 /usr/bin/crontab
+#RUN chown root:cron /usr/bin/crontab
+#RUN chown root:cron /bin/busybox
+##RUN chgrp crontab /usr/bin/crontab
+#RUN chmod g+s /usr/bin/crontab
+##RUN chmod g+s /bin/busybox
+##RUN chmod 4774 -R /var/spool/cron
+#RUN touch /var/run/crond.pid
+#RUN chmod 744 /var/run/crond.pid
+
+USER $_USER
+RUN /usr/bin/crontab  /usr/local/bin/cronjob 
+
+CMD ["/usr/sbin/crond", "-f", "-d", "0"]
